@@ -328,7 +328,7 @@
     <div class="church">Redeemer Waco</div>
     <div class="subtitle">
       <span>Sound Booth Checklist</span>
-      <span class="build">Built 2025-06-29 10:00</span>
+      <span class="build">Built 2025-06-29 10:30</span>
     </div>
   </header>
 
@@ -451,7 +451,7 @@ async function capture() {
     showResult(data, true);
   } catch (e) {
     console.error(e);
-    showStatus(e.message || 'Something went wrong. Try again.', 'error', 4000);
+    showStatus('Error: ' + (e.message || 'Unknown error'), 'error', 8000);
   } finally {
     btn.classList.remove('busy');
   }
