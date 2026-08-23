@@ -1,16 +1,17 @@
 # Redeemer Sound Booth Checklist
 
-A web app (PWA) that allows sound booth operators to photograph the completed Sunday Sound Booth Checklist and automatically log all results to a Google Sheet. No typing required — just open the app, point the camera at the checklist, and tap the button.
+A web app (PWA) that allows sound booth operators to photograph the completed Sunday Sound Booth Checklist, review and correct what the AI read, then save it to a Google Sheet with one tap.
 
 ---
 
 ## What It Does
 
-- Opens the phone camera
-- Operator photographs the completed paper checklist
-- AI reads the form and extracts: date, operator name, notes, and all 15 checkbox values
-- Saves one row to a Google Sheet automatically
-- Shows a confirmation screen with everything that was recorded
+1. Opens the phone camera
+2. Operator photographs the completed paper checklist
+3. AI reads the form and extracts: date, operator name, notes, and all 15 checkbox values
+4. A review screen appears showing everything the AI read — all fields are editable
+5. Operator corrects any mistakes, toggles any misread checkboxes
+6. Operator taps Submit to save one row to the Google Sheet
 
 ---
 
@@ -18,11 +19,14 @@ A web app (PWA) that allows sound booth operators to photograph the completed Su
 
 1. Complete the paper checklist as normal
 2. Open Chrome on your phone and go to the app URL (or tap the home screen icon if installed)
-3. Point the camera at the checklist so the whole form is visible within the gold guide box
+3. Point the camera at the checklist so the whole form fits within the gold guide box
 4. Tap the white circle button
-5. Wait a few seconds — the app reads the form and saves it
-6. Review the result screen to confirm everything looks right
-7. Tap "Scan Another" if needed, or just close the app
+5. Wait a few seconds while the AI reads the form
+6. Review screen appears — check that everything looks right
+7. Tap any checklist item to toggle it between ✓ and ✗ if it was misread
+8. Edit the date, operator name, or notes fields if needed
+9. Tap **Submit →** to save to the spreadsheet
+10. Green confirmation appears — tap **Scan Another →** if needed
 
 To install to home screen: in Chrome, tap the three-dot menu → Add to Home Screen → Add.
 
@@ -65,11 +69,12 @@ Cloudflare Worker  ← holds Anthropic API key securely
     ▼
 Anthropic Claude API  ← reads the form and returns structured data
     │
-    │  returns JSON
+    │  returns JSON to app
     ▼
-Operator's Phone
+Operator's Phone (review screen)
     │
-    │  writes one row
+    │  operator edits if needed, taps Submit
+    │  writes one row via Google Sheets API
     ▼
 Google Sheet
 ```
@@ -82,7 +87,7 @@ All services used are free or very low cost:
 
 ---
 
-## Accounts Required
+## Accounts
 
 All accounts are under **soundbooth@redeemerwaco.org**
 
@@ -96,9 +101,23 @@ All accounts are under **soundbooth@redeemerwaco.org**
 
 ---
 
+## Credentials Reference
+
+Keep this information in a secure location. These are needed to maintain or rebuild the app.
+
+| Item | Value |
+|---|---|
+| Cloudflare Worker URL | https://steep-wind-3233.soundbooth.workers.dev/ |
+| Google Sheet ID | 19S6KzqLBFq3BNU3TSVla_tWnZUpGvefXbCeOyx74iVQ |
+| Service Account Email | redeemer-checklist-writer@redeemer-checklist.iam.gserviceaccount.com |
+| Service Account Private Key | In the downloaded JSON file — see Google Cloud setup |
+| Anthropic API Key | Stored only in Cloudflare Worker secret — never in this repo |
+
+---
+
 ## Full Setup Instructions
 
-Follow these steps in order. Each section builds on the previous one.
+Follow these steps in order if rebuilding from scratch. Each section builds on the previous one.
 
 ---
 
@@ -122,9 +141,19 @@ GitHub hosts the app files and makes them available as a website for free.
 2. In the left sidebar, click **Pages**
 3. Under Source, select **Deploy from a branch**
 4. Under Branch, select **main** and **/ (root)**, click **Save**
-5. After 60 seconds, refresh — your app URL will appear, something like:
+5. After 60 seconds, refresh — your app URL will appear:
    `https://soundbooth-redeemerwaco.github.io/redeemer-sound-checklist`
 6. **Save this URL** — this is what operators will use
+
+#### 1D — Upload App Files
+Upload all five files to the repository via **Add file → Upload files**:
+- `index.html`
+- `manifest.json`
+- `README.md`
+- `icon-192.png`
+- `icon-512.png`
+
+Icons can be generated free at **favicon.io/favicon-generator** — download the ZIP, rename `android-chrome-192x192.png` → `icon-192.png` and `android-chrome-512x512.png` → `icon-512.png`.
 
 ---
 
@@ -139,24 +168,24 @@ Anthropic provides the AI (Claude) that reads the checklist photos.
 #### 2B — Add Credit
 1. Click **Plans & Billing** in the left sidebar
 2. Click **Add credit** and add $10
-3. This will cover approximately 1,000 scans — top up as needed
+3. This covers approximately 1,000 scans — top up as needed
 
 #### 2C — Create an API Key
 1. Click **API Keys** in the left sidebar
 2. Click **Create Key**, name it `redeemer-checklist`
 3. The key appears on screen — **do not navigate away yet**
 4. Click the copy icon to copy the key
-5. **Immediately** paste it into a secure note or password manager
+5. **Immediately** open Cloudflare (Part 3) and paste it there as a secret
 6. The key starts with `sk-ant-api03-` and is about 108 characters long
 7. It will NEVER be shown again after you leave this page
 
-> **Important:** Do not paste this key into any file that goes on GitHub. It must only go into Cloudflare (next step).
+> **Critical:** Do not paste this key into index.html or any file on GitHub. It must only go into Cloudflare as a secret, or Anthropic will automatically revoke it within minutes.
 
 ---
 
 ### PART 3 — Cloudflare Setup
 
-Cloudflare acts as a secure middleman between the app and the AI. The API key is stored here, never in the app files on GitHub.
+Cloudflare acts as a secure middleman. The Anthropic API key is stored here — never in the app files on GitHub.
 
 #### 3A — Create an Account
 1. Go to **cloudflare.com** and sign up with `soundbooth@redeemerwaco.org`
@@ -210,15 +239,18 @@ export default {
 ```
 
 9. Click **Deploy**
-10. **Copy the Worker URL** — it looks like `https://redeemer-checklist-proxy.soundbooth-redeemerwaco.workers.dev`
+10. **Copy the Worker URL** — shown at the top of the page, looks like:
+    `https://steep-wind-3233.soundbooth.workers.dev/`
+    Include the trailing slash.
 
 #### 3C — Add the API Key as a Secret
 1. Click the **Settings** tab on your Worker page
 2. Click **Variables and Secrets** in the left sidebar
 3. Under Secrets, click **Add**
-4. Variable name: `ANTHROPIC_API_KEY`
-5. Value: paste your Anthropic API key from Part 2C
-6. Click **Deploy**
+4. Set Type to **Secret** (not Text)
+5. Variable name: `ANTHROPIC_API_KEY`
+6. Value: paste your Anthropic API key from Part 2C
+7. Click **Deploy**
 
 ---
 
@@ -228,7 +260,7 @@ export default {
 1. Go to **console.cloud.google.com** and sign in with `soundbooth@redeemerwaco.org`
 2. At the top, click the project dropdown → **New Project**
 3. Name it `redeemer-checklist` and click **Create**
-4. Make sure the new project is selected in the dropdown
+4. Make sure the new project is selected in the dropdown at the top
 
 #### 4B — Enable the Google Sheets API
 1. In the left sidebar, click **APIs & Services** → **Library**
@@ -236,33 +268,30 @@ export default {
 3. Click it, then click **Enable**
 
 #### 4C — Create a Service Account
-A service account lets the app write to the sheet without anyone needing to log in.
-
 1. In the left sidebar, click **APIs & Services** → **Credentials**
-2. Scroll to the bottom — you will see a **Service Accounts** section
-3. Click **+ Create Credentials** → **Service Account** at the top of the page
-4. Name it `redeemer-checklist-writer`, click **Create and Continue**
-5. Skip the optional steps — click **Done**
-6. Back on the Credentials page, scroll to **Service Accounts** at the bottom
-7. Click the service account email address
-8. Click the **Keys** tab
-7. Click **Add Key** → **Create new key** → **JSON** → **Create**
-8. A JSON file downloads to your computer — **keep this file safe**
-9. Open the file in a text editor and note two values:
-   - `client_email` — looks like `redeemer-checklist-writer@redeemer-checklist.iam.gserviceaccount.com`
-   - `private_key` — a long block starting with `-----BEGIN PRIVATE KEY-----`
+2. Click **+ Create Credentials** → **Service Account**
+3. Name it `redeemer-checklist-writer`, click **Create and Continue**
+4. Skip the optional steps — click **Done**
+5. Back on the Credentials page, scroll to **Service Accounts** at the bottom
+6. Click the service account email address
+7. Click the **Keys** tab
+8. Click **Add Key** → **Create new key** → **JSON** → **Create**
+9. A JSON file downloads to your computer — **keep this file safe, it cannot be regenerated**
+10. Open the file in a text editor and note two values:
+    - `client_email` — looks like `redeemer-checklist-writer@redeemer-checklist.iam.gserviceaccount.com`
+    - `private_key` — the entire block from `-----BEGIN PRIVATE KEY-----` to `-----END PRIVATE KEY-----\n`
 
 #### 4D — Create the Google Sheet
 1. Go to **sheets.google.com** and create a new blank spreadsheet
 2. Name it `Sound Booth Checklist Log`
-3. In Row 1, paste these headers (one per cell, A through R):
+3. In Row 1, add these headers across columns A through R:
 
 ```
 Date | Operator | Notes | Power supply on top of desk | Computer power on | Check mains, auxiliary speakers and subwoofer are audible | Start Spotify and make sure you can hear it | Test wireless mics | In OBS Verify "Audio Input Capture" Meter in OBS is moving and camera visible | Verify NDI Stream on TV in Lobby | Check DB Levels - should average around 80 db | At 9:45 AM, start the stream and recording | Check that livestream is available on Youtube | At 10 AM, switch the scene to the one showing cameras | When the service ends, click "Stop Streaming" and "Stop Recording" | Remove batteries from microphones and put in charger | After service, trim the video and publish | Shut down the computer and sound board
 ```
 
-4. Look at the URL — copy the Sheet ID from it:
-   `https://docs.google.com/spreadsheets/d/`**`THIS_PART_IS_THE_SHEET_ID`**`/edit`
+4. Get the Sheet ID from the URL:
+   `https://docs.google.com/spreadsheets/d/`**`SHEET_ID_IS_HERE`**`/edit`
 
 #### 4E — Share the Sheet with the Service Account
 1. Click **Share** (top right of the sheet)
@@ -273,10 +302,9 @@ Date | Operator | Notes | Power supply on top of desk | Computer power on | Chec
 
 ---
 
-### PART 5 — Configure and Upload the App
+### PART 5 — Configure and Upload index.html
 
-#### 5A — Edit index.html
-Open `index.html` in a text editor and find this section near the top of the script:
+Open `index.html` in a text editor and find the CONFIG block near the top of the script section:
 
 ```javascript
 const CONFIG = {
@@ -290,67 +318,61 @@ const CONFIG = {
 ```
 
 Replace each placeholder:
-- `YOUR_CLOUDFLARE_WORKER_URL` → the Worker URL from Part 3B
-- `YOUR_GOOGLE_SHEET_ID` → the Sheet ID from Part 4D
-- `YOUR_SERVICE_ACCOUNT_EMAIL` → the `client_email` from the JSON file
-- `YOUR_PRIVATE_KEY` → the `private_key` from the JSON file (include the full `-----BEGIN...-----END-----` block)
+- `YOUR_CLOUDFLARE_WORKER_URL` → Worker URL from Part 3B (include trailing slash)
+- `YOUR_GOOGLE_SHEET_ID` → Sheet ID from Part 4D
+- `YOUR_SERVICE_ACCOUNT_EMAIL` → `client_email` from the JSON file
+- `YOUR_PRIVATE_KEY` → the full `private_key` value from the JSON file
 
-> **Note:** The Anthropic API key does NOT go here. It lives only in Cloudflare.
+> **Private key note:** Copy the entire value from the JSON file including `-----BEGIN PRIVATE KEY-----` and `-----END PRIVATE KEY-----\n` and all the `\n` characters within it. Do not copy just the key ID (a short hex string) — that is not the private key.
 
-#### 5B — Upload Files to GitHub
-Upload all four files to the GitHub repository:
-- `index.html` (with your credentials filled in)
-- `manifest.json`
-- `README.md`
-- `icon-192.png` and `icon-512.png` (generate free at favicon.io — download, rename files)
+> **The Anthropic API key does NOT go here.** It lives only in Cloudflare.
 
-To upload: go to your GitHub repo → **Add file** → **Upload files** → drag files in → **Commit changes**.
-
-GitHub Pages will update within 60 seconds of each upload.
+Upload the completed `index.html` to GitHub via **Add file → Upload files**.
 
 ---
 
-### PART 6 — Test It
+### PART 6 — Test
 
-1. On a phone, open **Chrome** and go to the app URL
+1. On a phone, open **Chrome** and navigate to the GitHub Pages URL
 2. Allow camera permission when asked
-3. Point the camera at a completed checklist and tap the button
-4. After a few seconds you should see the result screen with all items listed
-5. Check the Google Sheet — a new row should appear
+3. Point the camera at a completed checklist and tap the shutter button
+4. After a few seconds the review screen should appear
+5. Verify the data looks correct, tap **Submit →**
+6. Check the Google Sheet — a new row should appear
 
-**Confirm you're on the latest version** by checking the build timestamp in the top-right corner of the header. It should match the most recently deployed version.
+**Confirm you're on the latest version** by checking the build timestamp in the top-right corner of the header.
 
 ---
 
 ### PART 7 — Add the QR Code to the Checklist
 
 Once the app is live and tested:
-1. Go to **qr-code-generator.com** or any free QR code generator
+1. Go to any free QR code generator (e.g. **qr-code-generator.com**)
 2. Enter the GitHub Pages URL
 3. Download the QR code image
-4. Add it to the bottom of the checklist document where it says "Scan the QR code to upload this form"
+4. Add it to the checklist document where it says "Scan the QR code to upload this form"
 5. Reprint the checklist
 
 ---
 
 ## Maintenance
 
-### If the AI stops working (API error)
-The Anthropic API key may need to be replaced or the credit balance topped up.
-1. Go to **console.anthropic.com** → **Plans & Billing** to check the balance
-2. If the key needs replacing: create a new key, go to Cloudflare → Worker → Settings → Variables and Secrets → edit `ANTHROPIC_API_KEY`
+### Topping up Anthropic credit
+Go to **console.anthropic.com** → **Plans & Billing** → **Add credit**. Each scan costs roughly $0.01.
 
-### If the sheet fills up
-The Google Sheet can hold thousands of rows. If it ever gets unwieldy, create a new sheet, share it with the service account, update `SHEET_ID` in `index.html`, and re-upload to GitHub.
+### Replacing the Anthropic API key
+If the key stops working: create a new key at console.anthropic.com, then go to Cloudflare → Compute → Workers & Pages → `redeemer-checklist-proxy` → Settings → Variables and Secrets → edit `ANTHROPIC_API_KEY`. Never put the key in index.html.
 
 ### If the checklist changes
-If items are added, removed, or reworded:
 1. Update the `CHECKLIST_ITEMS` array in `index.html` to match the new list exactly
 2. Update the column headers in the Google Sheet to match
 3. Re-upload `index.html` to GitHub
 
-### If you need to transfer ownership
-All accounts are under `soundbooth@redeemerwaco.org`. Transfer access by sharing that account's credentials with the new administrator, or create new accounts and repeat the setup steps above.
+### If the sheet gets too large
+Create a new Google Sheet, share it with the service account email as Editor, update `SHEET_ID` in `index.html`, re-upload to GitHub.
+
+### Transferring ownership
+All accounts are under `soundbooth@redeemerwaco.org`. Share that account's credentials with the new administrator, or set up new accounts and follow the setup steps above.
 
 ---
 
@@ -359,11 +381,14 @@ All accounts are under `soundbooth@redeemerwaco.org`. Transfer access by sharing
 | Problem | Likely Cause | Fix |
 |---|---|---|
 | Camera doesn't appear | Not using Chrome, or permission denied | Use Chrome; tap "Try Again" on error screen |
-| "API error" on scan | Anthropic key missing or expired | Check Cloudflare secret; check Anthropic billing balance |
-| Result screen shows wrong data | Photo was blurry or poorly framed | Try again with better lighting and steady hands |
-| Nothing appears in the sheet | Sheet not shared with service account | Share the sheet with the service account email as Editor |
+| "Failed to fetch" | Worker URL wrong or Worker not deployed | Check WORKER_URL in index.html includes trailing slash; verify Worker is deployed in Cloudflare |
+| "API error 405" | Worker URL missing trailing slash | Add `/` to end of WORKER_URL in index.html |
+| "API error" on scan | Anthropic key missing, expired, or wrong | Check Cloudflare secret is type Secret not Text; check Anthropic billing balance |
+| "Google auth failed" | Private key wrong or malformed | Re-check private_key in index.html — must be the full key block, not the key ID |
+| Nothing in the sheet | Sheet not shared with service account | Share sheet with service account email as Editor |
+| Review screen shows wrong data | Photo blurry or poorly framed | Rescan with better lighting and steady hands |
 | App shows old version | Browser cache | Clear Chrome cache or re-enter the URL manually |
-| "Google auth failed" | Service account credentials wrong | Re-check client_email and private_key in index.html |
+| Anthropic key got revoked | Key was committed to public GitHub repo | Never put the key in index.html; keep it only in Cloudflare |
 
 ---
 
