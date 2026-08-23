@@ -328,7 +328,7 @@
     <div class="church">Redeemer Waco</div>
     <div class="subtitle">
       <span>Sound Booth Checklist</span>
-      <span class="build">Built 2025-06-29 10:30</span>
+      <span class="build">Built 2025-06-29 11:00</span>
     </div>
   </header>
 
@@ -451,7 +451,7 @@ async function capture() {
     showResult(data, true);
   } catch (e) {
     console.error(e);
-    showStatus('Error: ' + (e.message || 'Unknown error'), 'error', 8000);
+    showStatus('Error: ' + (e.message || e.toString() || 'Unknown'), 'error', 10000);
   } finally {
     btn.classList.remove('busy');
   }
@@ -499,7 +499,7 @@ No markdown, no explanation, no backticks. Only the JSON object.`;
 
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
-    throw new Error(`API error ${response.status}: ${err.error?.message || 'unknown'}`);
+    throw new Error(`API error ${response.status}: ${JSON.stringify(err)}`);
   }
 
   const apiData = await response.json();
@@ -509,7 +509,7 @@ No markdown, no explanation, no backticks. Only the JSON object.`;
     const clean = text.replace(/```json|```/g, '').trim();
     return JSON.parse(clean);
   } catch {
-    throw new Error('Could not read checklist. Try a clearer photo.');
+    throw new Error(`JSON parse failed. Raw response: ${text.substring(0, 200)}`);
   }
 }
 
