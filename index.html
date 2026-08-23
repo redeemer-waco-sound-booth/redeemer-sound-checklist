@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>Sound Booth — Redeemer</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:      #1a2340;
+      --navy-lt:   #253054;
+      --cream:     #f5f0e8;
+      --cream-dk:  #ede7d9;
+      --gold:      #b8963e;
+      --gold-lt:   #d4ae5a;
+      --text:      #1a2340;
+      --muted:     #7a8099;
+      --success:   #2d6a4f;
+      --error:     #8b1a1a;
+      --border:    #d4cfc4;
+      --radius:    10px;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--navy);
+      font-family: 'Inter', sans-serif;
+      color: var(--text);
+      overscroll-behavior: none;
+    }
+
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+      max-width: 480px;
+      margin: 0 auto;
+      background: var(--cream);
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--navy);
+      color: var(--cream);
+      padding: 16px 20px 14px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    header .church {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      color: var(--gold-lt);
+    }
+    header .subtitle {
+      font-size: 0.72rem;
+      color: rgba(245,240,232,0.55);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header .build {
+      font-size: 0.6rem;
+      color: rgba(245,240,232,0.25);
+    }
+
+    /* ── Screens ── */
+    .screen { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+    .screen.active { display: flex; }
+
+    /* ══════════════════════════════
+       CAMERA SCREEN
+    ══════════════════════════════ */
+    #screen-camera {
+      position: relative;
+      background: #000;
+    }
+
+    #video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    #canvas { display: none; }
+
+    /* Viewfinder */
+    .viewfinder {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .viewfinder-box {
+      width: 78%;
+      aspect-ratio: 3/4;
+      border: 2px solid rgba(184,150,62,0.8);
+      border-radius: var(--radius);
+      box-shadow: 0 0 0 2000px rgba(0,0,0,0.45);
+    }
+
+    /* Instruction overlay */
+    .cam-instruction {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      padding: 14px 20px;
+      background: linear-gradient(to bottom, rgba(26,35,64,0.85), transparent);
+      color: rgba(245,240,232,0.9);
+      font-size: 0.8rem;
+      letter-spacing: 0.04em;
+      text-align: center;
+    }
+
+    /* Status */
+    #cam-status {
+      position: absolute;
+      bottom: 110px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 24px;
+      border-radius: 30px;
+      font-size: 0.88rem;
+      font-weight: 500;
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+      text-align: center;
+      max-width: 88%;
+      white-space: normal;
+    }
+    #cam-status.show { opacity: 1; }
+    #cam-status.working { background: rgba(26,35,64,0.88); color: var(--cream); }
+    #cam-status.success { background: var(--success); color: #fff; }
+    #cam-status.error   { background: var(--error); color: #fff; }
+
+    /* Shutter */
+    #shutter-btn {
+      position: absolute;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      border: 4px solid rgba(184,150,62,0.9);
+      background: rgba(184,150,62,0.2);
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #shutter-btn::after {
+      content: '';
+      position: absolute;
+      inset: 6px;
+      border-radius: 50%;
+      background: rgba(184,150,62,0.6);
+    }
+    #shutter-btn:active { background: rgba(184,150,62,0.4); transform: translateX(-50%) scale(0.93); }
+    #shutter-btn.busy { opacity: 0.35; pointer-events: none; }
+
+    /* Camera error */
+    #cam-error {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      height: 100%;
+      padding: 32px;
+      text-align: center;
+      background: var(--navy);
+    }
+    #cam-error.show { display: flex; }
+    #cam-error p {
+      color: rgba(245,240,232,0.7);
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+    #cam-error button {
+      padding: 12px 28px;
+      background: var(--gold);
+      color: var(--navy);
+      border: none;
+      border-radius: var(--radius);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* ══════════════════════════════
+       RESULT SCREEN
+    ══════════════════════════════ */
+    #screen-result {
+      overflow-y: auto;
+      padding: 20px;
+      gap: 16px;
+      background: var(--cream);
+    }
+
+    .result-header {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .result-header .result-date {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--navy);
+    }
+    .result-header .result-operator {
+      font-size: 0.82rem;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+    }
+
+    .result-status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      border-radius: var(--radius);
+      font-size: 0.88rem;
+      font-weight: 500;
+    }
+    .result-status.saved {
+      background: rgba(45,106,79,0.1);
+      color: var(--success);
+      border: 1px solid rgba(45,106,79,0.25);
+    }
+    .result-status.failed {
+      background: rgba(139,26,26,0.08);
+      color: var(--error);
+      border: 1px solid rgba(139,26,26,0.2);
+    }
+
+    .checklist-preview {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .check-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.82rem;
+      line-height: 1.4;
+      color: var(--text);
+    }
+    .check-item:last-child { border-bottom: none; }
+    .check-mark {
+      flex-shrink: 0;
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 600;
+      margin-top: 1px;
+    }
+    .check-mark.true  { background: rgba(45,106,79,0.15); color: var(--success); }
+    .check-mark.false { background: rgba(139,26,26,0.1);  color: var(--error); }
+
+    .notes-section {
+      background: var(--cream-dk);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+    }
+    .notes-label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .notes-text {
+      font-size: 0.85rem;
+      line-height: 1.5;
+      color: var(--text);
+    }
+    .notes-text.empty { color: var(--muted); font-style: italic; }
+
+    .scan-again-btn {
+      width: 100%;
+      padding: 15px;
+      background: var(--navy);
+      color: var(--cream);
+      border: none;
+      border-radius: var(--radius);
+      font-family: 'Inter', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: 0.01em;
+      margin-top: auto;
+      flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .scan-again-btn:active { opacity: 0.85; }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <div class="church">Redeemer Waco</div>
+    <div class="subtitle">
+      <span>Sound Booth Checklist</span>
+      <span class="build">Built 2025-06-29 10:00</span>
+    </div>
+  </header>
+
+  <!-- ── CAMERA SCREEN ── -->
+  <div id="screen-camera" class="screen active">
+    <video id="video" autoplay playsinline muted></video>
+    <canvas id="canvas"></canvas>
+
+    <div class="viewfinder">
+      <div class="viewfinder-box"></div>
+    </div>
+
+    <div class="cam-instruction">Frame the completed checklist within the guide</div>
+
+    <div id="cam-status"></div>
+    <button id="shutter-btn" onclick="capture()"></button>
+
+    <div id="cam-error">
+      <p>Camera access is needed to scan the checklist. Please allow camera permission and try again.</p>
+      <button onclick="startCamera()">Try Again</button>
+    </div>
+  </div>
+
+  <!-- ── RESULT SCREEN ── -->
+  <div id="screen-result" class="screen">
+
+    <div class="result-header">
+      <div class="result-date" id="result-date">—</div>
+      <div class="result-operator" id="result-operator">—</div>
+    </div>
+
+    <div class="result-status saved" id="result-status">✓ Saved to spreadsheet</div>
+
+    <div class="notes-section">
+      <div class="notes-label">Problems / Notes</div>
+      <div class="notes-text" id="result-notes">—</div>
+    </div>
+
+    <div class="checklist-preview" id="checklist-preview"></div>
+
+    <button class="scan-again-btn" onclick="resetToCamera()">Scan Another →</button>
+
+  </div>
+
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+//  CONFIG
+// ─────────────────────────────────────────────
+const CONFIG = {
+  WORKER_URL: 'https://redeemer-checklist-proxy.soundbooth-redeemerwaco.workers.dev',
+  SHEET_ID:   '19S6KzqLBFq3BNU3TSVla_tWnZUpGvefXbCeOyx74iVQ',
+  SERVICE_ACCOUNT: {
+    client_email: 'redeemer-checklist-writer@redeemer-checklist.iam.gserviceaccount.com',
+    private_key:  '7e457f39713b6275f1ba075df3aaf588c0c75a7c',
+  }
+};
+
+// ─────────────────────────────────────────────
+//  CHECKLIST ITEMS (in sheet column order)
+// ─────────────────────────────────────────────
+const CHECKLIST_ITEMS = [
+  'Power supply on top of desk',
+  'Computer power on',
+  'Check mains, auxiliary speakers and subwoofer are audible',
+  'Start Spotify and make sure you can hear it',
+  'Test wireless mics',
+  'In OBS Verify "Audio Input Capture" Meter in OBS is moving and camera visible',
+  'Verify NDI Stream on TV in Lobby',
+  'Check DB Levels - should average around 80 db',
+  'At 9:45 AM, start the stream and recording',
+  'Check that livestream is available on Youtube',
+  'At 10 AM, switch the scene to the one showing cameras',
+  'When the service ends, click "Stop Streaming" and "Stop Recording"',
+  'Remove batteries from microphones and put in charger',
+  'After service, trim the video and publish',
+  'Shut down the computer and sound board',
+];
+
+// ─────────────────────────────────────────────
+//  CAMERA
+// ─────────────────────────────────────────────
+let stream = null;
+
+async function startCamera() {
+  document.getElementById('cam-error').classList.remove('show');
+  try {
+    if (stream) stream.getTracks().forEach(t => t.stop());
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+      audio: false
+    });
+    document.getElementById('video').srcObject = stream;
+  } catch (e) {
+    document.getElementById('cam-error').classList.add('show');
+  }
+}
+
+startCamera();
+
+// ─────────────────────────────────────────────
+//  CAPTURE & PROCESS
+// ─────────────────────────────────────────────
+async function capture() {
+  const btn = document.getElementById('shutter-btn');
+  btn.classList.add('busy');
+  showStatus('Reading checklist…', 'working');
+
+  const video  = document.getElementById('video');
+  const canvas = document.getElementById('canvas');
+  canvas.width  = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  const base64 = canvas.toDataURL('image/jpeg', 0.88).split(',')[1];
+
+  try {
+    const data = await readChecklist(base64);
+    await writeToSheet(data);
+    showResult(data, true);
+  } catch (e) {
+    console.error(e);
+    showStatus(e.message || 'Something went wrong. Try again.', 'error', 4000);
+  } finally {
+    btn.classList.remove('busy');
+  }
+}
+
+// ─────────────────────────────────────────────
+//  ANTHROPIC OCR
+// ─────────────────────────────────────────────
+async function readChecklist(base64) {
+  const itemList = CHECKLIST_ITEMS.map((item, i) => `${i + 1}. ${item}`).join('\n');
+
+  const prompt = `This is a photo of a Sunday Sound Booth Checklist form. Extract the following fields:
+
+1. "date" — the handwritten date at the top
+2. "operator" — the handwritten operator name
+3. "notes" — the handwritten text in the "Problems encountered today" section (empty string if blank)
+4. For each checklist item below, return TRUE if there is any mark in its checkbox, FALSE if the checkbox is empty.
+
+Checklist items:
+${itemList}
+
+Return ONLY a raw JSON object with these exact keys:
+- "date": string
+- "operator": string  
+- "notes": string
+- One key per checklist item using the EXACT item text as the key, value is true or false (boolean)
+
+No markdown, no explanation, no backticks. Only the JSON object.`;
+
+  const response = await fetch(CONFIG.WORKER_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1024,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: base64 } },
+          { type: 'text', text: prompt }
+        ]
+      }]
+    })
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(`API error ${response.status}: ${err.error?.message || 'unknown'}`);
+  }
+
+  const apiData = await response.json();
+  const text = apiData.content?.find(b => b.type === 'text')?.text?.trim() || '';
+
+  try {
+    const clean = text.replace(/```json|```/g, '').trim();
+    return JSON.parse(clean);
+  } catch {
+    throw new Error('Could not read checklist. Try a clearer photo.');
+  }
+}
+
+// ─────────────────────────────────────────────
+//  GOOGLE SHEETS
+// ─────────────────────────────────────────────
+async function writeToSheet(data) {
+  const token = await getGoogleAccessToken();
+
+  // Row: Date, Operator, Notes, then each checklist item as TRUE/FALSE
+  const row = [
+    data.date     || '',
+    data.operator || '',
+    data.notes    || '',
+    ...CHECKLIST_ITEMS.map(item => {
+      const val = data[item];
+      return val === true || val === 'true' || val === 'TRUE' ? 'TRUE' : 'FALSE';
+    })
+  ];
+
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/A1:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ values: [row] })
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(`Sheet error: ${err.error?.message || response.status}`);
+  }
+}
+
+// ─────────────────────────────────────────────
+//  RESULT SCREEN
+// ─────────────────────────────────────────────
+function showResult(data, saved) {
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+
+  document.getElementById('result-date').textContent     = data.date     || 'No date found';
+  document.getElementById('result-operator').textContent = data.operator ? `Operator: ${data.operator}` : 'No operator name found';
+
+  const notes = data.notes || '';
+  const notesEl = document.getElementById('result-notes');
+  notesEl.textContent = notes || 'None recorded';
+  notesEl.className   = 'notes-text' + (notes ? '' : ' empty');
+
+  const statusEl = document.getElementById('result-status');
+  if (saved) {
+    statusEl.className   = 'result-status saved';
+    statusEl.textContent = '✓ Saved to spreadsheet';
+  } else {
+    statusEl.className   = 'result-status failed';
+    statusEl.textContent = '✗ Could not save — check connection';
+  }
+
+  const preview = document.getElementById('checklist-preview');
+  preview.innerHTML = '';
+  CHECKLIST_ITEMS.forEach(item => {
+    const val   = data[item];
+    const done  = val === true || val === 'true' || val === 'TRUE';
+    const div   = document.createElement('div');
+    div.className = 'check-item';
+    div.innerHTML = `
+      <span class="check-mark ${done ? 'true' : 'false'}">${done ? '✓' : '✗'}</span>
+      <span>${item}</span>
+    `;
+    preview.appendChild(div);
+  });
+
+  showScreen('result');
+}
+
+function resetToCamera() {
+  showScreen('camera');
+  startCamera();
+}
+
+// ─────────────────────────────────────────────
+//  GOOGLE AUTH (standard)
+// ─────────────────────────────────────────────
+async function getGoogleAccessToken() {
+  const now   = Math.floor(Date.now() / 1000);
+  const claim = {
+    iss:   CONFIG.SERVICE_ACCOUNT.client_email,
+    scope: 'https://www.googleapis.com/auth/spreadsheets',
+    aud:   'https://oauth2.googleapis.com/token',
+    exp:   now + 3600,
+    iat:   now
+  };
+  const jwt  = await makeJWT(claim, CONFIG.SERVICE_ACCOUNT.private_key);
+  const resp = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+      assertion:  jwt
+    })
+  });
+  if (!resp.ok) throw new Error('Google auth failed. Check service account credentials.');
+  return (await resp.json()).access_token;
+}
+
+async function makeJWT(claim, pemKey) {
+  const header  = b64url(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
+  const payload = b64url(JSON.stringify(claim));
+  const signing = `${header}.${payload}`;
+  const key     = await importPrivateKey(pemKey);
+  const sig     = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, new TextEncoder().encode(signing));
+  return `${signing}.${b64url(sig)}`;
+}
+
+function b64url(data) {
+  if (typeof data === 'string') data = new TextEncoder().encode(data);
+  const bytes = data instanceof ArrayBuffer ? new Uint8Array(data) : data;
+  return btoa(String.fromCharCode(...bytes))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+async function importPrivateKey(pem) {
+  const stripped = pem
+    .replace(/-----BEGIN PRIVATE KEY-----/, '')
+    .replace(/-----END PRIVATE KEY-----/, '')
+    .replace(/\s+/g, '');
+  const binary = Uint8Array.from(atob(stripped), c => c.charCodeAt(0));
+  return crypto.subtle.importKey(
+    'pkcs8', binary.buffer,
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+    false, ['sign']
+  );
+}
+
+// ─────────────────────────────────────────────
+//  UI HELPERS
+// ─────────────────────────────────────────────
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(`screen-${name}`).classList.add('active');
+}
+
+let statusTimer = null;
+function showStatus(msg, type, duration) {
+  clearTimeout(statusTimer);
+  const el = document.getElementById('cam-status');
+  el.textContent = msg;
+  el.className   = `show ${type}`;
+  if (duration) statusTimer = setTimeout(() => { el.className = ''; }, duration);
+}
+</script>
+</body>
+</html>
