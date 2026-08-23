@@ -202,33 +202,103 @@
     }
 
     /* ══════════════════════════════
-       RESULT SCREEN
+       REVIEW SCREEN
     ══════════════════════════════ */
     #screen-result {
       overflow-y: auto;
       padding: 20px;
-      gap: 16px;
+      gap: 14px;
       background: var(--cream);
     }
 
-    .result-header {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      padding-bottom: 16px;
-      border-bottom: 1px solid var(--border);
-    }
-    .result-header .result-date {
+    .review-title {
       font-family: 'Cormorant Garamond', serif;
-      font-size: 1.5rem;
+      font-size: 1.2rem;
       font-weight: 600;
       color: var(--navy);
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
     }
-    .result-header .result-operator {
-      font-size: 0.82rem;
+    .review-title span {
+      display: block;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.68rem;
+      font-weight: 400;
       color: var(--muted);
-      letter-spacing: 0.04em;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      margin-bottom: 2px;
     }
+
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .field-label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .field-input {
+      width: 100%;
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 12px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .field-input:focus { border-color: var(--navy); }
+    textarea.field-input {
+      resize: vertical;
+      min-height: 70px;
+      line-height: 1.5;
+    }
+
+    .checklist-edit {
+      display: flex;
+      flex-direction: column;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: #fff;
+    }
+    .check-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.82rem;
+      line-height: 1.4;
+      color: var(--text);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.1s;
+    }
+    .check-item:last-child { border-bottom: none; }
+    .check-item:active { background: var(--cream); }
+    .check-toggle {
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      font-weight: 700;
+      transition: background 0.15s, color 0.15s;
+    }
+    .check-toggle.true  { background: rgba(45,106,79,0.15); color: var(--success); }
+    .check-toggle.false { background: rgba(139,26,26,0.08); color: var(--error); }
 
     .result-status {
       display: flex;
@@ -250,60 +320,27 @@
       border: 1px solid rgba(139,26,26,0.2);
     }
 
-    .checklist-preview {
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-    }
-    .check-item {
-      display: flex;
-      align-items: flex-start;
+    .btn-row {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
       gap: 10px;
-      padding: 9px 0;
-      border-bottom: 1px solid var(--border);
-      font-size: 0.82rem;
-      line-height: 1.4;
-      color: var(--text);
-    }
-    .check-item:last-child { border-bottom: none; }
-    .check-mark {
+      margin-top: auto;
       flex-shrink: 0;
-      width: 18px;
-      height: 18px;
-      border-radius: 4px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.7rem;
-      font-weight: 600;
-      margin-top: 1px;
     }
-    .check-mark.true  { background: rgba(45,106,79,0.15); color: var(--success); }
-    .check-mark.false { background: rgba(139,26,26,0.1);  color: var(--error); }
-
-    .notes-section {
+    .rescan-btn {
+      padding: 15px;
       background: var(--cream-dk);
-      border: 1px solid var(--border);
+      color: var(--navy);
+      border: 1.5px solid var(--border);
       border-radius: var(--radius);
-      padding: 12px 14px;
-    }
-    .notes-label {
-      font-size: 0.68rem;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
       font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--muted);
-      margin-bottom: 6px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
     }
-    .notes-text {
-      font-size: 0.85rem;
-      line-height: 1.5;
-      color: var(--text);
-    }
-    .notes-text.empty { color: var(--muted); font-style: italic; }
-
-    .scan-again-btn {
-      width: 100%;
+    .rescan-btn:active { opacity: 0.75; }
+    .submit-btn {
       padding: 15px;
       background: var(--navy);
       color: var(--cream);
@@ -314,11 +351,10 @@
       font-weight: 600;
       cursor: pointer;
       letter-spacing: 0.01em;
-      margin-top: auto;
-      flex-shrink: 0;
       -webkit-tap-highlight-color: transparent;
     }
-    .scan-again-btn:active { opacity: 0.85; }
+    .submit-btn:active { opacity: 0.85; }
+    .submit-btn.busy { opacity: 0.45; pointer-events: none; }
   </style>
 </head>
 <body>
@@ -328,7 +364,7 @@
     <div class="church">Redeemer Waco</div>
     <div class="subtitle">
       <span>Sound Booth Checklist</span>
-      <span class="build">Built 2025-06-29 11:30</span>
+      <span class="build">Built 2025-06-29 12:00</span>
     </div>
   </header>
 
@@ -352,24 +388,40 @@
     </div>
   </div>
 
-  <!-- ── RESULT SCREEN ── -->
+  <!-- ── REVIEW SCREEN ── -->
   <div id="screen-result" class="screen">
 
-    <div class="result-header">
-      <div class="result-date" id="result-date">—</div>
-      <div class="result-operator" id="result-operator">—</div>
+    <div class="review-title">
+      <span>Review &amp; Edit Before Saving</span>
+      Tap any item to toggle · Edit fields as needed
     </div>
 
-    <div class="result-status saved" id="result-status">✓ Saved to spreadsheet</div>
-
-    <div class="notes-section">
-      <div class="notes-label">Problems / Notes</div>
-      <div class="notes-text" id="result-notes">—</div>
+    <div class="field-group">
+      <div>
+        <div class="field-label">Date</div>
+        <input type="text" class="field-input" id="edit-date" placeholder="Date" />
+      </div>
+      <div>
+        <div class="field-label">Operator Name</div>
+        <input type="text" class="field-input" id="edit-operator" placeholder="Operator name" />
+      </div>
+      <div>
+        <div class="field-label">Problems / Notes</div>
+        <textarea class="field-input" id="edit-notes" placeholder="None"></textarea>
+      </div>
     </div>
 
-    <div class="checklist-preview" id="checklist-preview"></div>
+    <div>
+      <div class="field-label" style="margin-bottom:8px">Checklist Items</div>
+      <div class="checklist-edit" id="checklist-edit"></div>
+    </div>
 
-    <button class="scan-again-btn" onclick="resetToCamera()">Scan Another →</button>
+    <div class="result-status" id="result-status" style="display:none"></div>
+
+    <div class="btn-row">
+      <button class="rescan-btn" onclick="resetToCamera()">↩ Rescan</button>
+      <button class="submit-btn" id="submit-btn" onclick="submitToSheet()">Submit →</button>
+    </div>
 
   </div>
 
@@ -447,8 +499,7 @@ async function capture() {
 
   try {
     const data = await readChecklist(base64);
-    await writeToSheet(data);
-    showResult(data, true);
+    showResult(data);
   } catch (e) {
     console.error(e);
     showStatus('Error: ' + (e.message || e.toString() || 'Unknown'), 'error', 10000);
@@ -548,46 +599,93 @@ async function writeToSheet(data) {
 }
 
 // ─────────────────────────────────────────────
-//  RESULT SCREEN
+//  REVIEW SCREEN
 // ─────────────────────────────────────────────
-function showResult(data, saved) {
+
+// Holds the current editable state for checklist items
+let checkState = {};
+
+function showResult(data) {
   if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
 
-  document.getElementById('result-date').textContent     = data.date     || 'No date found';
-  document.getElementById('result-operator').textContent = data.operator ? `Operator: ${data.operator}` : 'No operator name found';
+  // Populate editable fields
+  document.getElementById('edit-date').value     = data.date     || '';
+  document.getElementById('edit-operator').value = data.operator || '';
+  document.getElementById('edit-notes').value    = data.notes    || '';
 
-  const notes = data.notes || '';
-  const notesEl = document.getElementById('result-notes');
-  notesEl.textContent = notes || 'None recorded';
-  notesEl.className   = 'notes-text' + (notes ? '' : ' empty');
+  // Build toggleable checklist
+  checkState = {};
+  const container = document.getElementById('checklist-edit');
+  container.innerHTML = '';
 
-  const statusEl = document.getElementById('result-status');
-  if (saved) {
-    statusEl.className   = 'result-status saved';
-    statusEl.textContent = '✓ Saved to spreadsheet';
-  } else {
-    statusEl.className   = 'result-status failed';
-    statusEl.textContent = '✗ Could not save — check connection';
-  }
-
-  const preview = document.getElementById('checklist-preview');
-  preview.innerHTML = '';
   CHECKLIST_ITEMS.forEach(item => {
-    const val   = data[item];
-    const done  = val === true || val === 'true' || val === 'TRUE';
-    const div   = document.createElement('div');
+    const val  = data[item];
+    const done = val === true || val === 'true' || val === 'TRUE';
+    checkState[item] = done;
+
+    const div = document.createElement('div');
     div.className = 'check-item';
+    div.dataset.item = item;
+    div.onclick = () => toggleItem(item);
     div.innerHTML = `
-      <span class="check-mark ${done ? 'true' : 'false'}">${done ? '✓' : '✗'}</span>
+      <span class="check-toggle ${done ? 'true' : 'false'}" id="tog-${CSS.escape(item)}">${done ? '✓' : '✗'}</span>
       <span>${item}</span>
     `;
-    preview.appendChild(div);
+    container.appendChild(div);
   });
+
+  // Hide status banner, re-enable submit
+  const statusEl = document.getElementById('result-status');
+  statusEl.style.display = 'none';
+  document.getElementById('submit-btn').classList.remove('busy');
+  document.getElementById('submit-btn').textContent = 'Submit →';
 
   showScreen('result');
 }
 
+function toggleItem(item) {
+  checkState[item] = !checkState[item];
+  const tog = document.getElementById('tog-' + CSS.escape(item));
+  if (tog) {
+    tog.className   = 'check-toggle ' + (checkState[item] ? 'true' : 'false');
+    tog.textContent = checkState[item] ? '✓' : '✗';
+  }
+}
+
+async function submitToSheet() {
+  const btn = document.getElementById('submit-btn');
+  btn.classList.add('busy');
+  btn.textContent = 'Saving…';
+
+  const data = {
+    date:     document.getElementById('edit-date').value.trim(),
+    operator: document.getElementById('edit-operator').value.trim(),
+    notes:    document.getElementById('edit-notes').value.trim(),
+    ...checkState
+  };
+
+  try {
+    await writeToSheet(data);
+    const statusEl = document.getElementById('result-status');
+    statusEl.className   = 'result-status saved';
+    statusEl.textContent = '✓ Saved to spreadsheet';
+    statusEl.style.display = 'flex';
+    btn.textContent = 'Scan Another →';
+    btn.classList.remove('busy');
+    btn.onclick = resetToCamera;
+  } catch (e) {
+    console.error(e);
+    const statusEl = document.getElementById('result-status');
+    statusEl.className   = 'result-status failed';
+    statusEl.textContent = '✗ ' + (e.message || 'Save failed. Try again.');
+    statusEl.style.display = 'flex';
+    btn.classList.remove('busy');
+    btn.textContent = 'Submit →';
+  }
+}
+
 function resetToCamera() {
+  document.getElementById('submit-btn').onclick = submitToSheet;
   showScreen('camera');
   startCamera();
 }
