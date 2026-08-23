@@ -328,7 +328,7 @@
     <div class="church">Redeemer Waco</div>
     <div class="subtitle">
       <span>Sound Booth Checklist</span>
-      <span class="build">Built 2025-06-29 11:00</span>
+      <span class="build">Built 2025-06-29 11:30</span>
     </div>
   </header>
 
@@ -543,7 +543,7 @@ async function writeToSheet(data) {
 
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
-    throw new Error(`Sheet error: ${err.error?.message || response.status}`);
+    throw new Error(`Sheet error ${response.status}: ${JSON.stringify(err)}`);
   }
 }
 
